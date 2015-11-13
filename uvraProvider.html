@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html>
+	<head>
+        <style>
+            .tumme {
+                width:100px;
+            }
+        </style>
+	</head>
+	<body>
+        <div id="app">
+            <button id="printknapp" onclick="printImage('http://localhost:58982/arkis!A0021624_00001/full/full/0/default.jpg', 0.6997)">Skriv ut bred bild</button>
+            <button id="printknapp" onclick="printImage('http://localhost:58982/arkis!A0021624_00006/full/full/0/default.jpg', 1.494)">Skriv ut hög bild</button>
+            <div>
+                <img class="tumme" src="https://iiif.riksarkivet.se/arkis!C0000262_00001/0,0,6088,4318/485,344/0/default.jpg" alt="">
+            </div>        
+        </div>
+	</body>
+
+
+	<script src="bower_components/jquery/dist/jquery.min.js"></script>
+	<script src="bower_components/easyxdm/src/easyXDM.debug.js"></script>	
+
+	<script type="text/javascript">
+
+        var old_printImage = function (imageUri) {
+            var bildid = 'bildid';
+            var title = "arkiv bla bla";
+            var sourceText = title + ' - ' + bildid;
+            if ($('#invisibleImageDiv').length > 0) {
+                $('#invisibleImageDiv').remove();
+            }
+            var img = $('<img class="print-image" />').attr('src', imageUri)
+                .on('load', function () {
+                if (!this.complete || typeof this.naturalWidth == "undefined" || this.naturalWidth == 0) {
+                    alert('broken image!');
+                }
+                else {
+                    window.print();
+                }
+            });
+            var printImageDimensionsLandsscape = 'width:99%';
+            var printImageDimensionsPortrait = 'width:95%';
+            var printStylesExist = false;
+            $('style').each(function (index, element) {
+                var styleContent = $(element).text();
+                if (styleContent.indexOf('print') >= 0 && styleContent.indexOf('landscape') >=0) {
+                    printStylesExist = true;
+                }
+            });
+            if (!printStylesExist) {
+                //$('head').append("<style type='text/css'>@media screen { .invisible-screen { display:none} } </style>");
+                $('head').append('<style type="text/css">@media screen { .invisible-screen { display:none;} }</style>');
+                //$('body').append('<style type="text/css">@media print { @page {size: landscape;} }</style>');
+                //$('body').append('<style type="text/css">@media print { @page {#app { display:none;}} }</style>');
+                $('body').prepend('<style type="text/css">@media print and (orientation:landscape) { .print-image { ' + printImageDimensionsLandsscape + '} #app { display:none;} }</style>');
+                $('body').prepend('<style type="text/css">@media print and (orientation:portrait) { .print-image { ' + printImageDimensionsPortrait + '} #app { display:none;} }</style>');
+            }
+            var img_div = $('<div id="invisibleImageDiv" class="invisible-screen visible-print">');
+            img_div.append('<div><h5>' + sourceText + '<h5></div>');
+            img_div.append(img);
+            $('body').append(img_div);
+        };
+
+
+        var printImage = function (imageUri, currentRatio) {
+            var title = "arkiv bla bla bla";
+            var bildid = 'abc123';
+            var sourceText = title + ' - ' + bildid;
+            if ($('#invisibleImageDiv').length > 0) {
+                $('#invisibleImageDiv').remove();
+            }
+            var img = $('<img class="print-image" />').attr('src', imageUri)
+                .on('load', function () {
+                if (!this.complete || typeof this.naturalWidth == "undefined" || this.naturalWidth == 0) {
+                    alert('broken image!');
+                }
+                else {
+                    window.print();
+                }
+            });
+            var printImageDimensionsLandsscape = 'width:50%';
+            var printImageDimensionsPortrait = 'width:50%';
+            if (currentRatio > 0 && currentRatio < 1) {
+                printImageDimensionsPortrait = 'width:98%';
+                if (currentRatio < 0.7) {
+                    printImageDimensionsLandsscape = 'width:98%';
+                }
+                else {
+                    var prct = Math.floor(currentRatio / 0.7 * 98);
+                    printImageDimensionsLandsscape = 'width:' + prct + '%';
+                }
+            }
+            if (currentRatio > 1) {
+                //calculating the percentage of width in the page when the height can be 100%
+                var widthPercentageOfFullHeightInLandscape = 0.7 / currentRatio;
+                //taking into account the height of the sourceText
+                var widthPercentage = Math.floor(widthPercentageOfFullHeightInLandscape * 80);
+                printImageDimensionsLandsscape = 'width:' + widthPercentage + '%';
+                if (currentRatio > 1.41) {
+                    var prct = Math.floor(1.41 / currentRatio * 98);
+                    printImageDimensionsPortrait = 'width:' + prct + '%';
+                }
+                else {
+                    printImageDimensionsPortrait = 'width:98%';
+                }
+            }
+            var printStylesExist = false;
+            $('style').each(function (index, element) {
+                var styleContent = $(element).text();
+                if (styleContent.indexOf('print') >= 0 && styleContent.indexOf('landscape') >= 0) {
+                    $(element).remove();
+                }
+                if (styleContent.indexOf('print') >= 0 && styleContent.indexOf('portrait') >= 0) {
+                    $(element).remove();
+                }
+                if (styleContent.indexOf('screen') >= 0 && styleContent.indexOf('.invisible-screen') >= 0) {
+                    $(element).remove();
+                    printStylesExist = true;
+                }
+            });
+            $('head').append('<style type="text/css">@media screen { .invisible-screen { display:none;} }</style>');
+            $('body').prepend('<style type="text/css">@media print and (orientation:landscape) { .print-image { ' + printImageDimensionsLandsscape + '} #app { display:none;}  }</style>');
+            $('body').prepend('<style type="text/css">@media print and (orientation:portrait) { .print-image { ' + printImageDimensionsPortrait + '} #app { display:none;}  }</style>');
+            if (!printStylesExist) {
+            }
+            //var printLandscapeCss = '@media print and (orientation:landscape) { .print-image { ' + printImageDimensionsLandsscape + '} #app { display:none;} }';
+            //var printPortraitCss = '@media print and (orientation:portrait) { .print-image { ' + printImageDimensionsPortrait + '} #app { display:none;} }';
+            //var img_div = $('<div id="invisibleImageDiv" class="invisible-screen visible-print" style="' + printLandscapeCss + '" style="' + printPortraitCss + '" >');
+            var img_div = $('<div id="invisibleImageDiv" class="invisible-screen visible-print" >');
+            img_div.append('<div><h5>' + sourceText + '<h5></div>');
+            img_div.append(img);
+            $('body').append(img_div);
+        };
+
+
+
+		$(function(){
+			var socket = new easyXDM.Socket({
+			    onMessage: function(message, origin){
+			        alert("Received '" + message + "' from '" + origin + "'");
+			        socket.postMessage("Indeed it does!");
+			    }
+			});
+			
+					
+		});
+	</script>
+
+</html>

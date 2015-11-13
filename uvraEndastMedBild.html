@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title></title>
+        <style> .bild{ width: 20%}
+        </style>
+    </head>
+    <body>
+        <div id="app">
+            <button id="printknapp1" onclick="getImage('http://localhost:58982/arkis!A0021624_00001/full/full/0/default.jpg')">Skriv ut bred bild 0.70716</button>
+            <button id="printknapp2" onclick="getImage('http://localhost:58982/arkis!A0021624_00006/full/full/0/default.jpg')">Skriv ut hög bild 1.501</button>
+            <button id="printknapp3" onclick="getImage('http://localhost:58982/arkis!A0021624_00006/0,0,2000,1200/full/0/default.jpg')">Skriv ut hög bild 0.6</button>
+            <button id="printknapp4" onclick="getImage('http://localhost:58982/arkis!A0021624_00006/0,0,1666,2000/full/0/default.jpg')">Skriv ut hög bild 1.2</button>
+            <button id="printknapp5" onclick="getImage('http://localhost:58982/arkis!A0021624_00006/0,0,1176,2000/full/0/default.jpg')">Skriv ut hög bild 1.7</button>
+            <button id="printknapp6" onclick="getImage('http://localhost:58982/arkis!A0021624_00006/0,0,1875,1500/full/0/default.jpg')">Skriv ut hög bild 0.8</button>
+            <button id="printknapp7" onclick="window.print()">Endast print</button>
+            <div>
+                <img id="minBild" src="https://iiif.riksarkivet.se/arkis!C0000262_00001/0,0,6088,4318/485,344/0/default.jpg" alt="">
+            </div>        
+        </div>
+        
+        
+        
+        <script src="bower_components/jquery/dist/jquery.min.js"></script>       
+        
+        <script>
+
+            var getImage = function (imageUri) {
+                var img = new Image();
+                img.onload = function() {
+                    var currentRatio = parseFloat(this.height) / parseFloat(this.width);
+                    printImage(imageUri, currentRatio, 'text bla bla bla');
+                }
+                img.src = imageUri;
+            };
+
+
+
+            var printImage = function (imageUri , currentRatio, printSourceText) {
+                
+                var UVContainerIdWithHash = "#app";
+                var printContainerId = 'invisibleImageDiv';
+                var printContainerIdWithHash = '#' + printContainerId;
+                var printContainerClassName = 'invisible-screen';
+                var printSourceTextId = 'printSourceText';
+                var printSourceTextIdWithHash = '#' + printSourceTextId;
+                var printImageId = "printImage";
+                var printImageIdWithHash = '#' + printImageId;
+                var printSourceTextHeightInPixels = 0;
+
+                if ($(printContainerIdWithHash).length > 0) {
+                    $(printContainerIdWithHash).remove();
+                }
+
+                var img = $('<img id="' + printImageId + '" />').attr('src', imageUri)
+                    .on('load', function () {
+                    if (!this.complete || typeof this.naturalWidth == "undefined" || this.naturalWidth == 0) {
+                        alert('broken image!');
+                    }
+                    else {
+                        var imageWidth = this.width;
+                        var imageHeight = this.height + printSourceTextHeightInPixels;
+                        var containerDivHeight = imageHeight + printSourceTextHeightInPixels;
+                        var whRatio = parseFloat(containerDivHeight) / parseFloat(imageWidth);
+                        //var whRatio = getWHRatioForDiv($(printContainerIdWithHash));
+                        var widthPercentageLandscape = calculateWidthPercentageForLandscape(whRatio);
+                        var widthPercentagePortrait = calculateWidthPercentageForPortrait(whRatio);
+                        setPrintStyles(widthPercentageLandscape, widthPercentagePortrait, printContainerIdWithHash, printSourceTextIdWithHash, printSourceTextHeightInPixels, printImageIdWithHash, UVContainerIdWithHash)
+                        window.print();
+                    }
+                });
+                
+                var img_div = $('<div id="'+ printContainerId +'" class="' + printContainerClassName + '" >');
+                //img_div.append('<div id="' + printSourceTextId + '"><h5>' + printSourceText + '<h5></div>')
+                img_div.append(img);
+                $('body').append(img_div);
+            };
+            
+            function getWHRatioForDiv($div){
+                var divWidth = parseFloat($div.width()) ;
+                var divHeight = parseFloat($div.height());
+                var divWHRatio = divHeight /divWidth;
+                return divWHRatio;
+            }
+            
+            function calculateWidthPercentageForLandscape(WHRatio) {
+                var A4Ratio = 0.7071;
+                var defaultWidthPercentage = 40;
+                //for some reason 100% percent doesn't work when printing in landscape, even when it should
+                var maxWidthPercentage = 96;
+                var widthPercentage = defaultWidthPercentage;
+
+                if (WHRatio > 0 && WHRatio < 1) {
+                    if (WHRatio < A4Ratio) {
+                        widthPercentage = maxWidthPercentage;
+                    }
+                    else {
+                        widthPercentage = Math.floor(A4Ratio/WHRatio * maxWidthPercentage);
+                    }
+                }
+                else if (WHRatio > 1) {
+                    //calculating the percentage of width in the page when the height is 100%.
+                    var widthPercentageOfFullHeightInLandscape = A4Ratio / WHRatio;
+                    widthPercentage = Math.floor(widthPercentageOfFullHeightInLandscape * maxWidthPercentage);
+                }
+
+                return widthPercentage
+                
+            }
+            
+            function calculateWidthPercentageForPortrait(WHRatio) {
+                var invA4Ratio = 1.4143;
+                var defaultWidthPercentage = 40;
+                var maxWidthPercentage = 100;
+                var widthPercentage = defaultWidthPercentage;
+
+                if (WHRatio > 0 && WHRatio < 1) {
+                    widthPercentage = maxWidthPercentage;
+                }
+                else if (WHRatio > 1) {
+                    if (WHRatio > invA4Ratio) {
+                        widthPercentage = Math.floor(invA4Ratio / WHRatio * 100);
+                    }
+                    else {
+                        widthPercentage = maxWidthPercentage;
+                    }
+                }
+                
+                return widthPercentage
+                
+            }
+            
+            function setPrintStyles(widthPercentageLandscape, widthPercentagePortrait, printContainerIdWithHash, printSourceTextIdWithHash, printSourceTextHeightInPixels, printImageIdWithHash, UVContainerIdWithHash) {
+                $('style').each(function (index, element) {
+                    var styleContent = $(element).text();
+                    if (styleContent.indexOf('print') >= 0 && styleContent.indexOf('landscape') >= 0) {
+                        $(element).remove();
+                    }
+                    if (styleContent.indexOf('print') >= 0 && styleContent.indexOf('portrait') >= 0) {
+                        $(element).remove();
+                    }
+                    if (styleContent.indexOf('screen') >= 0 && styleContent.indexOf(printContainerIdWithHash) >= 0) {
+                        $(element).remove();
+                        printStylesExist = true;
+                    }
+                });
+                
+                var fullWidth = 100;
+                var containerLandscapeStyle = printContainerIdWithHash + ' { width: '   + widthPercentageLandscape + '%; } ';
+                var containerPortraitStyle = printContainerIdWithHash + ' { width: '   + widthPercentagePortrait + '%; } ';
+                var sourceTextLandscapeStyle = printSourceTextIdWithHash + ' { width: ' + fullWidth + '%; height: ' + printSourceTextHeightInPixels + 'px;} ';
+                var sourceTextPortraitStyle = printSourceTextIdWithHash + ' { width: ' + fullWidth + '%; height: ' + printSourceTextHeightInPixels + 'px;} ';
+                var imageLandscapeStyle = printImageIdWithHash + ' { width: ' + fullWidth + '%; } ';
+                var imagePortraitStyle = printImageIdWithHash + ' { width: ' + fullWidth + '%; } ';
+                var hidePrintContainer = printContainerIdWithHash + ' { display:none; } ';
+                var hideUVContainer = UVContainerIdWithHash + ' { display:none; } ';
+                var landscapeStyle = containerLandscapeStyle + sourceTextLandscapeStyle + imageLandscapeStyle + hideUVContainer;
+                var portraitStyle = containerPortraitStyle + sourceTextPortraitStyle + imagePortraitStyle + hideUVContainer;
+                
+                $('head').append('<style type="text/css">@media screen { ' + hidePrintContainer + ' }</style>');
+                $('body').prepend('<style type="text/css">@media print and (orientation:landscape) { ' + landscapeStyle +  ' }</style>');
+                $('body').prepend('<style type="text/css">@media print and (orientation:portrait) { ' + portraitStyle + ' }</style>');
+            }
+
+                
+       </script>        
+        
+    </body>
+</html>

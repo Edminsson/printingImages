@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title></title>
+        <style> .bild{ width: 20%}
+        </style>
+    </head>
+    <body>
+        <div id="app">
+            <button id="printknapp1" onclick="getImage('http://localhost:58982/arkis!A0021624_00001/full/full/0/default.jpg')">Skriv ut bred bild 0.70716</button>
+            <button id="printknapp2" onclick="getImage('http://localhost:58982/arkis!A0021624_00006/full/full/0/default.jpg')">Skriv ut hög bild 1.501</button>
+            <button id="printknapp3" onclick="getImage('http://localhost:58982/arkis!A0021624_00006/0,0,2000,1200/full/0/default.jpg')">Skriv ut hög bild 0.6</button>
+            <button id="printknapp4" onclick="getImage('http://localhost:58982/arkis!A0021624_00006/0,0,1666,2000/full/0/default.jpg')">Skriv ut hög bild 1.2</button>
+            <button id="printknapp5" onclick="getImage('http://localhost:58982/arkis!A0021624_00006/0,0,1176,2000/full/0/default.jpg')">Skriv ut hög bild 1.7</button>
+            <button id="printknapp6" onclick="getImage('http://localhost:58982/arkis!A0021624_00006/0,0,1875,1500/full/0/default.jpg')">Skriv ut hög bild 0.8</button>
+            <div>
+                <img id="minBild" src="https://iiif.riksarkivet.se/arkis!C0000262_00001/0,0,6088,4318/485,344/0/default.jpg" alt="">
+            </div>        
+        </div>
+        
+        
+        
+        <script src="bower_components/jquery/dist/jquery.min.js"></script>       
+        
+        <script>
+
+            var getImage = function (imageUri) {
+                var img = new Image();
+                img.onload = function() {
+                    var currentRatio = parseFloat(this.height) / parseFloat(this.width);
+                    printImage(imageUri, currentRatio);
+                }
+                img.src = imageUri;
+            };
+
+
+
+            var printImage = function (imageUri , currentRatio) {
+                
+                if ($('#invisibleImageDiv').length > 0) {
+                    $('#invisibleImageDiv').remove();
+                }
+                var img = $('<img id="bildsomskaprintas" class="print-image" />').attr('src', imageUri)
+                    .on('load', function () {
+                    if (!this.complete || typeof this.naturalWidth == "undefined" || this.naturalWidth == 0) {
+                        alert('broken image!');
+                    }
+                    else {
+                        window.print();
+                    }
+                });
+                var printImageDimensionsLandsscape = 'width:50%';
+                var printImageDimensionsPortrait = 'width:50%';
+                
+                if (currentRatio > 0 && currentRatio < 1) {
+                    printImageDimensionsPortrait = 'width:100%';
+                    if (currentRatio < 0.7071) {
+                        printImageDimensionsLandsscape = 'width:96%';
+                    }
+                    else {
+                        var prct = Math.floor(0.7071/currentRatio * 96);
+                        printImageDimensionsLandsscape = 'width:' + prct + '%';
+                    }
+                }
+                if (currentRatio > 1) {
+                    //calculating the percentage of width in the page when the height can be 100%
+                    var widthPercentageOfFullHeightInLandscape = 0.7071 / currentRatio;
+                    //taking into account the height of the sourceText
+                    var widthPercentage = Math.floor(widthPercentageOfFullHeightInLandscape * 96);
+                    printImageDimensionsLandsscape = 'width:' + widthPercentage + '%';
+                    if (currentRatio > 1.4143) {
+                        var prct = Math.floor(1.4143 / currentRatio * 100);
+                        printImageDimensionsPortrait = 'width:' + prct + '%';
+                    }
+                    else {
+                        printImageDimensionsPortrait = 'width:100%';
+                    }
+                }
+                var printStylesExist = false;
+                $('style').each(function (index, element) {
+                    var styleContent = $(element).text();
+                    if (styleContent.indexOf('print') >= 0 && styleContent.indexOf('landscape') >= 0) {
+                        $(element).remove();
+                    }
+                    if (styleContent.indexOf('print') >= 0 && styleContent.indexOf('portrait') >= 0) {
+                        $(element).remove();
+                    }
+                    if (styleContent.indexOf('screen') >= 0 && styleContent.indexOf('.invisible-screen') >= 0) {
+                        $(element).remove();
+                        printStylesExist = true;
+                    }
+                });
+                $('head').append('<style type="text/css">@media screen { .invisible-screen { display:none;} }</style>');
+                $('body').prepend('<style type="text/css">@media print and (orientation:landscape) { .print-image { ' + printImageDimensionsLandsscape + '} #app { display:none;}  }</style>');
+                $('body').prepend('<style type="text/css">@media print and (orientation:portrait) { .print-image { ' + printImageDimensionsPortrait + '} #app { display:none;}  }</style>');
+                if (!printStylesExist) {
+                }
+                //var printLandscapeCss = '@media print and (orientation:landscape) { .print-image { ' + printImageDimensionsLandsscape + '} #app { display:none;} }';
+                //var printPortraitCss = '@media print and (orientation:portrait) { .print-image { ' + printImageDimensionsPortrait + '} #app { display:none;} }';
+                //var img_div = $('<div id="invisibleImageDiv" class="invisible-screen visible-print" style="' + printLandscapeCss + '" style="' + printPortraitCss + '" >');
+                var img_div = $('<div id="invisibleImageDiv" class="invisible-screen visible-print" >');
+                img_div.append(img);
+                $('body').append(img_div);
+            };
+
+                
+       </script>        
+        
+    </body>
+</html>

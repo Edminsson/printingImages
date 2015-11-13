@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html>
+    <head>
+    </head>
+    <body>
+        <a target="_blank" href="uvraConsumer.html">Starta</a>
+         
+		<script src="bower_components/jquery/dist/jquery.min.js"></script>
+		<script type="text/javascript">
+			$(function(){
+
+                $("a").click(function () 
+                {
+                    var url = $(this).attr("href");
+                    var screenw = screen.availWidth - 10;
+                    var screenh = screen.availHeight - 60;
+                    var NWin = window.open(url, '', 'toolbar=no,location=no,directories=no,status=no,menubar=no,scrollbars=yes,resizable=yes,width=' + screenw + ',height=' + screenh + ',top=0,left=0,screenX=0,screenY=0');
+            
+                    if (window.focus)   
+                    {  
+                        NWin.focus();  
+                    }  
+                    return false;
+                })
+
+			});
+		</script>
+       
+    </body>
+</html>

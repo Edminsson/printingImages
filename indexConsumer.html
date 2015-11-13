@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap.min.css" integrity="sha512-dTfge/zgoMYpP7QbHy4gWMEGsbsdZeCXz7irItjcC3sPUFtf0kuFbDz/ixG7ArTxmDjLXDmezHubeNikyKGVyQ==" crossorigin="anonymous">
+		<link rel="stylesheet" href="css/consumer.css" >
+	</head>
+	<body>
+		<div class="container">
+			<div class="jumbotron">
+				<h1>Hello this is Consumer!</h1>	
+			</div>
+			<div>
+				<button id="printknapp" class="btn btn-primary">Skriv ut från Consumer</button>
+			</div>
+			<div class="bilder myDivToPrint">
+				<img class="bild" src="https://iiif.riksarkivet.se/arkis!C0000262_00008/full/full/0/default.jpg" alt="Ervalla">
+			</div>
+			<div class="panel panel-default">
+				<div class="panel-heading">This is the iFrame</div>
+				<div class="panel-body">
+					<div id="iframe_container"></div>
+				</div>
+			</div>			
+		</div>
+		<br/>
+
+
+		<script src="bower_components/jquery/dist/jquery.min.js"></script>
+		<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/js/bootstrap.min.js" integrity="sha512-K1qjQ+NcF2TYO/eI3M6v8EiNYZfA95pQumfvcVrTHtwQVDG+aHRqLi/ETn2uB+1JqwYqVG3LIvdm9lj6imS/pQ==" crossorigin="anonymous"></script>
+		<script src="bower_components/easyxdm/src/easyXDM.debug.js"></script>	
+		<script src="print.js"></script>	
+		<script type="text/javascript">
+			$(function(){
+				$('#printknapp').on('click', function() {
+					$('.bilder').print();
+				});
+				
+				var socket = new easyXDM.Socket({
+				    remote: "http://localhost:8080/theProvider.html",
+				    container: $('#iframe_container').get(0),
+				    onMessage: function(message, origin){
+				        alert("Received '" + message + "' from '" + origin + "'");
+				    },
+				    onReady: function() {
+				        socket.postMessage("Yay, it works!");
+				    }
+				});					
+			});
+		</script>
+
+	</body>
+</html>

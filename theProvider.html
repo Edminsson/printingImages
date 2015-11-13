@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap.min.css" integrity="sha512-dTfge/zgoMYpP7QbHy4gWMEGsbsdZeCXz7irItjcC3sPUFtf0kuFbDz/ixG7ArTxmDjLXDmezHubeNikyKGVyQ==" crossorigin="anonymous">
+		<link rel="stylesheet" href="css/provider.css" >
+	</head>
+	<body>
+		<div class="print-hidden">
+			<h1>Welcome to the provider!</h1>
+			<div class="alert alert-success" role="alert">The amazing provider</div>
+			<button id="utskriftsknapp" class="btn btn-primary">Skriv ut bild</button>
+			<button id="skrivknapp" class="btn btn-primary">Skriv ut bild via socketanrop</button>
+			<button id="printis" class="btn btn-primary">Skriv ut bild via div</button>
+			<button id="printjs" class="btn btn-primary">Skriv ut bild mha print.js</button>
+		</div>
+		<div class="bilder myDivToPrint">
+			<img class="bild" src="https://iiif.riksarkivet.se/arkis!K0008449_00001/full/full/0/default.jpg" alt="Ervalla">
+		</div>
+	</body>
+
+
+	<script src="bower_components/jquery/dist/jquery.min.js"></script>
+	<script src="bower_components/easyxdm/src/easyXDM.debug.js"></script>	
+	<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/js/bootstrap.min.js" integrity="sha512-K1qjQ+NcF2TYO/eI3M6v8EiNYZfA95pQumfvcVrTHtwQVDG+aHRqLi/ETn2uB+1JqwYqVG3LIvdm9lj6imS/pQ==" crossorigin="anonymous"></script>
+	<script src="print.js"></script>	
+
+
+	<script type="text/javascript">
+		$(function(){
+			var socket = new easyXDM.Socket({
+			    onMessage: function(message, origin){
+			        alert("Received '" + message + "' from '" + origin + "'");
+			        socket.postMessage("Indeed it does!");
+			    }
+			});
+			
+			function printDiv(divName) {
+				var printContents = document.getElementById(divName).innerHTML;
+				var originalContents = document.body.innerHTML;
+				document.body.innerHTML = printContents;
+				window.print();
+				document.body.innerHTML = originalContents;
+			}
+			
+			function skapaDivOchSkrivUt(divName) {
+				var printdiv = '<div><img class="printbild" src="https://iiif.riksarkivet.se/arkis!C0000262_00002/full/full/0/default.jpg" alt="Ervalla"></div>';
+				$('body').append(printdiv);
+				$(printdiv).print();
+				
+			}
+			
+			$('#printis').on('click', function() {
+				skapaDivOchSkrivUt();
+			});
+					
+			$('#printjs').on('click', function() {
+				$('.bilder').print();
+			});
+					
+			$('#utskriftsknapp').on('click', function() {
+				window.print();
+			});
+			
+			$('#skrivknapp').on('click', function() {
+				socket.postMessage('Printknapp trycktes');
+			});
+					
+		});
+	</script>
+
+</html>
