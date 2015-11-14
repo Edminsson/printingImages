@@ -7,6 +7,14 @@
     </head>
     <body>
         <div id="app">
+            <div id="samling">
+                <span>Width: </span><input id="bredd"type="text">
+                <span>Height: </span><input id="hojd"type="text">
+                <span>Ratio: </span><span id="ratio"></span>
+                <span>Set %: </span><input id="percentage"type="text">
+                <button onClick="VisaRatio()">Visa Ratio</button>
+                <button onClick="PrintaBilden()">Skriv ut bild</button>
+            </div>
             <button id="printknapp1" onclick="getImage('http://localhost:58982/arkis!A0021624_00001/full/full/0/default.jpg')">Skriv ut bred bild 0.70716</button>
             <button id="printknapp2" onclick="getImage('http://localhost:58982/arkis!A0021624_00006/full/full/0/default.jpg')">Skriv ut hög bild 1.501</button>
             <button id="printknapp3" onclick="getImage('http://localhost:58982/arkis!A0021624_00006/0,0,2000,1200/full/0/default.jpg')">Skriv ut hög bild 0.6</button>
@@ -25,18 +33,34 @@
         
         <script>
 
-            var getImage = function (imageUri) {
+            function VisaRatio(){
+                var imageWidth = parseFloat($('#bredd').val());
+                var imageHeight = parseFloat($('#hojd').val());
+                var ratio = imageWidth / imageHeight;
+                $('#ratio').text(ratio);
+            }
+            
+            function PrintaBilden(){
+                var imageWidth = parseInt($('#bredd').val());
+                var imageHeight = parseInt($('#hojd').val());
+                var bildUri = 'https://iiif.riksarkivet.se/arkis!C0000262_00009/0,0,'+imageWidth+','+imageHeight+'/full/0/default.jpg'
+                var percentageText = $('#percentage').val();
+                var percentage = percentageText.length > 0 ? parseFloat(percentageText) : 0;
+                getImage(bildUri, percentage);                    
+            }
+            
+            var getImage = function (imageUri, percentage) {
                 var img = new Image();
                 img.onload = function() {
                     var currentRatio = parseFloat(this.height) / parseFloat(this.width);
-                    printImage(imageUri, currentRatio, 'text bla bla bla');
+                    printImage(imageUri, currentRatio, 'text bla bla bla', percentage);
                 }
                 img.src = imageUri;
             };
 
 
 
-            var printImage = function (imageUri , currentRatio, printSourceText) {
+            var printImage = function (imageUri , currentRatio, printSourceText, percentage) {
                 
                 var UVContainerIdWithHash = "#app";
                 var printContainerId = 'invisibleImageDiv';
@@ -47,7 +71,7 @@
                 var printImageId = "printImage";
                 var printImageIdWithHash = '#' + printImageId;
                 var printSourceTextHeightInPixels = 0;
-
+                
                 if ($(printContainerIdWithHash).length > 0) {
                     $(printContainerIdWithHash).remove();
                 }
@@ -61,9 +85,10 @@
                         var imageWidth = this.width;
                         var imageHeight = this.height + printSourceTextHeightInPixels;
                         var containerDivHeight = imageHeight + printSourceTextHeightInPixels;
-                        var whRatio = parseFloat(containerDivHeight) / parseFloat(imageWidth);
+                        var whRatio = parseFloat(imageWidth) / parseFloat(containerDivHeight);
                         //var whRatio = getWHRatioForDiv($(printContainerIdWithHash));
-                        var widthPercentageLandscape = calculateWidthPercentageForLandscape(whRatio);
+                        //var widthPercentageLandscape = calculateWidthPercentageForLandscape(whRatio);
+                        var widthPercentageLandscape = percentage > 0 ? percentage : calculateWidthPercentageForLandscape(whRatio);
                         var widthPercentagePortrait = calculateWidthPercentageForPortrait(whRatio);
                         setPrintStyles(widthPercentageLandscape, widthPercentagePortrait, printContainerIdWithHash, printSourceTextIdWithHash, printSourceTextHeightInPixels, printImageIdWithHash, UVContainerIdWithHash)
                         window.print();
@@ -84,24 +109,24 @@
             }
             
             function calculateWidthPercentageForLandscape(WHRatio) {
-                var A4Ratio = 0.7071;
+                //The height/width ratio for A4 is 297/210 but it has to be adjusted in landscape mode 
+                //for some reason. We use 1.5. If you increase this value the page will be shrinked even more.
+                var breakpointRatio = 1.5;
+                var ratioFactor = WHRatio / breakpointRatio;
                 var defaultWidthPercentage = 40;
-                //for some reason 100% percent doesn't work when printing in landscape, even when it should
-                var maxWidthPercentage = 96;
-                var widthPercentage = defaultWidthPercentage;
-
-                if (WHRatio > 0 && WHRatio < 1) {
-                    if (WHRatio < A4Ratio) {
-                        widthPercentage = maxWidthPercentage;
-                    }
-                    else {
-                        widthPercentage = Math.floor(A4Ratio/WHRatio * maxWidthPercentage);
-                    }
+                var fullPercentage = 100;
+                var widthPercentage;
+                
+                //Something wrong with the ratio
+                if (WHRatio <= 0) {
+                    return defaultWidthPercentage;
                 }
-                else if (WHRatio > 1) {
-                    //calculating the percentage of width in the page when the height is 100%.
-                    var widthPercentageOfFullHeightInLandscape = A4Ratio / WHRatio;
-                    widthPercentage = Math.floor(widthPercentageOfFullHeightInLandscape * maxWidthPercentage);
+
+                if (WHRatio < breakpointRatio) {
+                    widthPercentage = Math.floor(ratioFactor * fullPercentage);
+                }
+                else {
+                    widthPercentage = fullPercentage;
                 }
 
                 return widthPercentage
@@ -109,25 +134,28 @@
             }
             
             function calculateWidthPercentageForPortrait(WHRatio) {
-                var invA4Ratio = 1.4143;
+                //If you need to shrink the page even more encrease the value of the breakpointRatio.
+                var whRatioA4 = parseFloat(210)/parseFloat(297);
+                var breakpointRatio = whRatioA4;
+                var ratioFactor = WHRatio / breakpointRatio;
                 var defaultWidthPercentage = 40;
-                var maxWidthPercentage = 100;
-                var widthPercentage = defaultWidthPercentage;
+                var fullPercentage = 100;
+                var widthPercentage;
+                
+                //Something wrong with the ratio
+                if (WHRatio <= 0) {
+                    return defaultWidthPercentage;
+                }
 
-                if (WHRatio > 0 && WHRatio < 1) {
-                    widthPercentage = maxWidthPercentage;
+                if (WHRatio < breakpointRatio) {
+                    widthPercentage = Math.floor(ratioFactor * fullPercentage);
                 }
-                else if (WHRatio > 1) {
-                    if (WHRatio > invA4Ratio) {
-                        widthPercentage = Math.floor(invA4Ratio / WHRatio * 100);
-                    }
-                    else {
-                        widthPercentage = maxWidthPercentage;
-                    }
+                else {
+                    widthPercentage = fullPercentage;
                 }
-                
+
                 return widthPercentage
-                
+               
             }
             
             function setPrintStyles(widthPercentageLandscape, widthPercentagePortrait, printContainerIdWithHash, printSourceTextIdWithHash, printSourceTextHeightInPixels, printImageIdWithHash, UVContainerIdWithHash) {
@@ -162,7 +190,7 @@
                 $('body').prepend('<style type="text/css">@media print and (orientation:portrait) { ' + portraitStyle + ' }</style>');
             }
 
-                
+
        </script>        
         
     </body>
